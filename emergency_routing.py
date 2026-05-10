@@ -120,11 +120,10 @@ class EmergencySystemApp(ctk.CTk):
         super().__init__()
         self.title("☾ Smart Triage: Emergency System")
         
-        # التعديل الخاص بتكبير الشاشة مع الاحتفاظ بشريط العنوان
         try:
-            self.state('zoomed') # بتشتغل على ويندوز
+            self.state('zoomed')
         except:
-            self.attributes('-zoomed', True) # بتشتغل على لينكس/ماك
+            self.attributes('-zoomed', True) 
             
         self.configure(fg_color=BG_WORKSPACE)
         self.grid_columnconfigure(0, weight=0, minsize=300) 
@@ -138,7 +137,7 @@ class EmergencySystemApp(ctk.CTk):
         self.ambulances_cache = []
         self.pending_sos = [] 
         self.active_sos_dots = {} 
-        self.is_dispatching = False # Flag لمنع التداخل والتهنيج
+        self.is_dispatching = False 
 
     def setup_sidebar(self):
         self.sidebar = ctk.CTkFrame(self, fg_color=BG_SIDEBAR, corner_radius=20)
@@ -232,7 +231,6 @@ class EmergencySystemApp(ctk.CTk):
         stats_frame = ctk.CTkFrame(radar_header, fg_color="transparent")
         stats_frame.pack(side="left", padx=20)
         
-        # --- تعديل: إضافة عرض ثابت ومناداة لليسار لمنع اهتزاز المحاكاة ---
         self.lbl_sim_status = ctk.CTkLabel(stats_frame, text="Engine: IDLE", font=("Segoe UI", 11, "bold"), text_color=TEXT_MUTED, width=250, anchor="w")
         self.lbl_sim_status.pack(anchor="w")
         self.lbl_sim_latency = ctk.CTkLabel(stats_frame, text="Decision Time: 0.00 ms", font=("Segoe UI", 11), text_color=TEXT_MUTED, width=250, anchor="w")
@@ -392,12 +390,10 @@ class EmergencySystemApp(ctk.CTk):
             self.lbl_sim_status.configure(text="Engine: ALL CLEARED!", text_color=ACCENT_LIME)
             return
 
-        # حماية إضافية لمنع تداخل العمليات والتسبب في اللاج (Lag)
         if getattr(self, 'is_dispatching', False):
             return 
         self.is_dispatching = True
 
-        # تشغيل العمليات الحسابية في الخلفية لمنع واجهة المستخدم من التشنج
         threading.Thread(target=self._calculate_and_dispatch, daemon=True).start()
 
     def _calculate_and_dispatch(self):
@@ -431,8 +427,6 @@ class EmergencySystemApp(ctk.CTk):
             self.after(0, lambda: self.lbl_sim_status.configure(text=f"Engine: PARALLEL THREADS ({sos_count} Left)", text_color=ACCENT_LIME))
             chunks = [self.pending_sos[i::cpu_count()] for i in range(cpu_count())]
             
-            # تغيير جوهري: استخدام ThreadPoolExecutor بدلاً من multiprocessing للرادار الحي
-            # هذا يحافظ على التوازي لكن بدون التسبب في انهيار (Crash) أو بطء للواجهة
             with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count()) as executor:
                 futures = [executor.submit(worker_calc_distances, chunk, amb_data) for chunk in chunks if chunk]
                 results = [f.result() for f in futures]
@@ -454,7 +448,6 @@ class EmergencySystemApp(ctk.CTk):
         latency_ms = (t_end - t_start) * 1000
         self.after(0, lambda: self.lbl_sim_latency.configure(text=f"Decision Time: {latency_ms:.2f} ms"))
 
-        # إرسال البيانات للواجهة الرئيسية (Main Thread) بأمان
         self.after(0, self._apply_dispatch, assignments)
 
     def _apply_dispatch(self, assignments):
@@ -497,7 +490,6 @@ class EmergencySystemApp(ctk.CTk):
             self.canvas.coords(info_text, curr_x, curr_y-30)
             
             if phase == 1: 
-                # --- تعديل: إضافة تأثير نبض بصري (تكبير وتصغير الدائرة المحيطة بالهدف) ---
                 pulse = (step % 10) - 5 # قيمة متغيرة لخلق التأثير
                 self.canvas.coords(ping, target_x-15-pulse, target_y-15-pulse, target_x+15+pulse, target_y+15+pulse)
                 self.canvas.itemconfig(ping, outline=BG_CARD_WHITE if step % 10 < 5 else RED_CRESCENT)
@@ -525,7 +517,6 @@ class EmergencySystemApp(ctk.CTk):
                 amb_obj['x'], amb_obj['y'], amb_obj['busy'] = target_x, target_y, False
                 self.after(2000, lambda: self.canvas.delete(info_text, info_bg))
 
-                # استدعاء التوزيع مجدداً بأمان
                 self.dispatch_ambulances()
 
 if __name__ == "__main__":
